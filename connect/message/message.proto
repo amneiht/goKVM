@@ -1,0 +1,35 @@
+syntax = "proto3";
+package message;
+option go_package = "./data";
+
+enum MessType {
+    UNKNOW = 0 ;
+    EVENT = 1 ;
+    CLIPBROAD = 2 ; 
+    AUTH = 3 ;
+    KEEPALIVE = 4 ;
+    RELEASE = 5 ;  // giai phong cac event
+}
+
+message Message {
+    bool Request = 1 ; // defalt = false
+    MessType Type = 2 ;
+    bytes Payload = 3 ;
+}
+
+message Event {
+    int32 Type = 1 ;
+    int32 Code = 2 ; 
+    int32 Value = 3 ;
+}
+
+message ClipBroad {
+    string data = 1;
+}
+
+message Auth {
+    string User = 1 ;
+    string Nonce = 2 ;
+    string Method = 3;
+    bytes result = 4 ;
+}

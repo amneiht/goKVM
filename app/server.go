@@ -63,27 +63,29 @@ func generateTLSCert() tls.Certificate {
 
 var numConnect int = 0
 
-func handle(conn net.Conn, dev *emulator.Device) {
+func handle(conn net.Conn, dev *emulator.Device, iclip bool) {
 
 	defer conn.Close()
 
-	watch := sharecb.CreateWatcher()
-	defer watch.Close()
-
-	watch.OnChange = func(newClip []byte) {
-		var mess = &data.Message{
-			Type:    data.MessType_CLIPBROAD,
-			Request: true,
-			Payload: newClip,
+	var watch *sharecb.Watcher = nil
+	if iclip {
+		watch = sharecb.CreateWatcher()
+		defer watch.Close()
+		watch.OnChange = func(newClip []byte) {
+			var mess = &data.Message{
+				Type:    data.MessType_CLIPBROAD,
+				Request: true,
+				Payload: newClip,
+			}
+			buff, _ := proto.Marshal(mess)
+			conn.Write(buff)
+			fmt.Println("New buffer")
 		}
-		buff, _ := proto.Marshal(mess)
-		conn.Write(buff)
-		fmt.Println("New buffer")
+		go watch.Check()
 	}
-
 	// run check session
-	go watch.Check()
-	buf := make([]byte, 4096)
+
+	buf := make([]byte, sharecb.MAXLENGTH+1000)
 
 	for {
 		conn.SetReadDeadline(time.Now().Add(5 * time.Second))
@@ -103,7 +105,11 @@ func handle(conn net.Conn, dev *emulator.Device) {
 			dev.ClearKey()
 		case data.MessType_CLIPBROAD:
 			if mess.Request {
-				watch.SetClipBoard(mess.Payload)
+				if watch != nil {
+					watch.SetClipBoard(mess.Payload)
+				} else {
+					fmt.Println("UnSupport Clibroad")
+				}
 			}
 		}
 	}
@@ -120,7 +126,7 @@ func reject(conn net.Conn) {
 
 func StartServer() {
 	cert := generateTLSCert()
-	sharecb.Init()
+	iclip := sharecb.Init()
 
 	fmt.Println("Create virtual input")
 	dev := emulator.CreateVirtualDevice()
@@ -145,7 +151,7 @@ func StartServer() {
 
 		if numConnect == 0 {
 			numConnect = 1
-			go handle(conn, dev)
+			go handle(conn, dev, iclip)
 		} else {
 			go reject(conn)
 		}

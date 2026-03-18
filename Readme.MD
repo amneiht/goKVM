@@ -6,7 +6,11 @@ This is simple kvm softwere write in go
 # Using
 On remote 
 ```
-sudo ./main -s
+# run sudo comanc first
+sudo ls
+export XAUTHORITY=$HOME/.Xauthority
+export DISPLAY=":0"
+sudo /home/ct129/app/bin/goKVM -s > /dev/null 2>&1  &
 ```
 </br> On local machine which has keybroad and mouse :
 ```
@@ -19,7 +23,7 @@ uintput module
 package : libx11-dev , xvfb 
 
 # Know bug and TODO
-- Sharing clipboard is not work with ssh
 - Add security mechanisms
 - Smooth switching between multiple devices
 - Only work in linux
+- exit program when server not availabe

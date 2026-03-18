@@ -42,6 +42,7 @@ func runSession(conn net.Conn) {
 	defer watch.Close()
 
 	watch.OnChange = func(newClip []byte) {
+
 		var mess = &data.Message{
 			Type:    data.MessType_CLIPBROAD,
 			Request: true,
@@ -86,7 +87,7 @@ func runSession(conn net.Conn) {
 		// fmt.Printf("buffWrite :%d \n", len(sendbuff))
 	})
 
-	buf := make([]byte, 4096)
+	buf := make([]byte, sharecb.MAXLENGTH+1000)
 	for handle.Run() {
 		conn.SetReadDeadline(time.Now().Add(5 * time.Second))
 		n, err := conn.Read(buf)
@@ -96,7 +97,7 @@ func runSession(conn net.Conn) {
 
 			switch mess.Type {
 			case data.MessType_CLIPBROAD:
-				fmt.Println("Buffer from server")
+				fmt.Printf("Buffer from server %d\n", len(mess.Payload))
 				watch.SetClipBoard(mess.Payload)
 			}
 		}

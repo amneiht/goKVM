@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"fmt"
 	"log"
 	"math/big"
 	"net"
@@ -14,6 +15,7 @@ import (
 	"github.com/amneiht/goKVM/connect/message/data"
 	"github.com/amneiht/goKVM/event/emulator"
 	"github.com/amneiht/goKVM/event/sharecb"
+	"github.com/amneiht/goKVM/util"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -62,10 +64,72 @@ func generateTLSCert() tls.Certificate {
 
 var numConnect int = 0
 
+func authenticationUser(conn net.Conn, ctx *AppCtx) bool {
+
+	nonce, _ := util.RandomString(32)
+	maxtry := 3
+	mess := &data.Message{
+		Request: true,
+		Type:    data.MessType_AUTH,
+	}
+
+	authm := &data.Auth{
+		Nonce:  nonce,
+		Method: "sha256",
+	}
+	mess.Payload, _ = proto.Marshal(authm)
+	sendbuff, _ := proto.Marshal(mess)
+	logger := log.Default()
+	readbuff := make([]byte, 2048)
+	for ctx.status != AUTH && maxtry > 0 {
+		conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
+		_, err := conn.Write(sendbuff)
+		if err != nil {
+			break
+		}
+		logger.Println("Request authentic from server")
+		conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+
+		_, err = conn.Read(readbuff)
+		if err != nil {
+			break
+		}
+		logger.Println("Got message")
+		var rmess data.Message
+		proto.Unmarshal(readbuff, &rmess)
+		if !rmess.Request && rmess.Type != data.MessType_AUTH {
+			maxtry = maxtry - 1
+			continue
+		}
+		var mauth data.Auth
+		proto.Unmarshal(rmess.Payload, &mauth)
+		if ctx.checkUser(&mauth) {
+			ctx.status = AUTH
+
+			rmess := &data.Message{
+				Type:    data.MessType_REGISTER,
+				Request: true,
+			}
+			cbuff, _ := proto.Marshal(rmess)
+			conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
+			conn.Write(cbuff)
+			logger.Println("Register complease")
+		}
+		maxtry--
+
+	}
+	return ctx.status == AUTH
+}
 func handle(conn net.Conn, dev *emulator.Device, ctx *AppCtx) {
 
+	// chua xac thuc
+	ctx.status = UNAUTH
 	defer conn.Close()
-
+	if !authenticationUser(conn, ctx) {
+		conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
+		conn.Write([]byte("Authentic false"))
+		return
+	}
 	logger := log.Default()
 	var watch *sharecb.Watcher = nil
 	if ctx.IsClipBroadSupport {
@@ -137,13 +201,13 @@ func StartServer(ctx *AppCtx) {
 	config := &tls.Config{
 		Certificates: []tls.Certificate{cert},
 	}
-
-	ln, err := tls.Listen("tcp", ":1597", config)
+	sport := fmt.Sprintf(":%d", ctx.port)
+	ln, err := tls.Listen("tcp", sport, config)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	logger.Println("TLS server listening :1597")
+	logger.Printf("TLS server listening :%s", sport)
 
 	for {
 		conn, err := ln.Accept()

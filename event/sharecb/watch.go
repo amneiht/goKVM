@@ -6,6 +6,7 @@ import (
 	"log"
 	"sync"
 
+	"github.com/amneiht/goKVM/util"
 	"golang.design/x/clipboard"
 )
 
@@ -26,19 +27,7 @@ func CreateWatcher() *Watcher {
 func (t *Watcher) Close() {
 	t.ctx.Done()
 }
-func equal(a, b []byte) bool {
-	if len(a) != len(b) {
-		return false
-	}
 
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-
-	return true
-}
 func TrimStr(input []byte) []byte {
 	// ret := strings.TrimFunc(string(input), func(r rune) bool {
 	// 	return !unicode.IsLetter(r) && !unicode.IsNumber(r)
@@ -84,7 +73,7 @@ func (t *Watcher) Check() {
 			continue
 		}
 		t.mu.Lock()
-		if t.OnChange != nil && !equal(data, t.old) {
+		if t.OnChange != nil && !util.Equal(data, t.old) {
 			// save old clipbroad
 			if len(data) < MAXLENGTH {
 				t.old = make([]byte, len(data))

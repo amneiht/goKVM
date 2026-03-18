@@ -2,6 +2,7 @@ package app
 
 import (
 	"crypto/tls"
+	"fmt"
 	"log"
 	"net"
 	"sync"
@@ -10,6 +11,7 @@ import (
 	"github.com/amneiht/goKVM/connect/message/data"
 	"github.com/amneiht/goKVM/event"
 	"github.com/amneiht/goKVM/event/sharecb"
+	"github.com/amneiht/goKVM/util"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -22,6 +24,7 @@ func keepAlive(conn net.Conn, wg *sync.WaitGroup) {
 	}
 	buff, _ := proto.Marshal(mess)
 	for {
+		conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
 		_, err := conn.Write(buff)
 		if err != nil {
 			break
@@ -81,7 +84,7 @@ func runSession(conn net.Conn) {
 			Payload: buf,
 		}
 		sendbuff, _ := proto.Marshal(mess)
-		conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+		conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
 		_, err := conn.Write(sendbuff)
 		if err != nil {
 			handle.Stop()
@@ -106,18 +109,90 @@ func runSession(conn net.Conn) {
 	}
 	wg.Wait()
 }
-func ClientConnect(s *string) {
+
+func authentic(ctx *AppCtx, conn net.Conn) bool {
+	user, _ := util.RandomString(10)
+	maxtry := 3
+	ctx.status = UNAUTH
+
+	mess := &data.Message{
+		Request: false,
+		Type:    data.MessType_AUTH,
+	}
+
+	authm := &data.Auth{
+		User:   user,
+		Method: "sha256",
+	}
+
+	readbuff := make([]byte, 2048)
+	conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+	_, err := conn.Read(readbuff)
+	if err != nil {
+		return false
+	}
+	var rmess data.Message
+	proto.Unmarshal(readbuff, &rmess)
+
+	logger := log.Default()
+	logger.Println("Read from server")
+
+	for ctx.status != AUTH && maxtry > 0 {
+
+		if !rmess.Request && rmess.Type != data.MessType_AUTH {
+			maxtry = maxtry - 1
+			continue
+		}
+		var mauth data.Auth
+		proto.Unmarshal(rmess.Payload, &mauth)
+
+		authm.Nonce = mauth.Nonce
+		authm.Result = ctx.CreateResult(authm)
+
+		p1, _ := proto.Marshal(authm)
+		mess.Payload = p1
+		p2, _ := proto.Marshal(mess)
+		conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
+		_, err = conn.Write(p2)
+		if err != nil {
+			break
+		}
+		logger.Println("Write authention message to server")
+		conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+		_, err = conn.Read(readbuff)
+		if err != nil {
+			break
+		}
+		logger.Println("Read new mess from server")
+		proto.Unmarshal(readbuff, &rmess)
+		if rmess.Type == data.MessType_REGISTER {
+			ctx.status = AUTH
+			logger.Println("Register complease")
+			break
+		}
+		maxtry--
+
+	}
+	return ctx.status == AUTH
+
+}
+func ClientConnect(ctx *AppCtx, s *string) {
 
 	conf := &tls.Config{
 		InsecureSkipVerify: true,
 	}
-	var connect_str = *s + ":1597"
+	connect_str := fmt.Sprintf("%s:%d", *s, ctx.port)
 
 	conn, err := tls.Dial("tcp", connect_str, conf)
 	log.Default().Printf(" Connect to : %s\n", connect_str)
 	if err != nil {
 		panic(err)
 	}
-	runSession(conn)
 	defer conn.Close()
+	if !authentic(ctx, conn) {
+		return
+	}
+
+	runSession(conn)
+
 }

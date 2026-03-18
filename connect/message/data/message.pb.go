@@ -30,6 +30,7 @@ const (
 	MessType_AUTH      MessType = 3
 	MessType_KEEPALIVE MessType = 4
 	MessType_RELEASE   MessType = 5 // giai phong cac event
+	MessType_REGISTER  MessType = 6
 )
 
 // Enum value maps for MessType.
@@ -41,6 +42,7 @@ var (
 		3: "AUTH",
 		4: "KEEPALIVE",
 		5: "RELEASE",
+		6: "REGISTER",
 	}
 	MessType_value = map[string]int32{
 		"UNKNOW":    0,
@@ -49,6 +51,7 @@ var (
 		"AUTH":      3,
 		"KEEPALIVE": 4,
 		"RELEASE":   5,
+		"REGISTER":  6,
 	}
 )
 
@@ -330,7 +333,7 @@ const file_connect_message_message_proto_rawDesc = "" +
 	"\x04User\x18\x01 \x01(\tR\x04User\x12\x14\n" +
 	"\x05Nonce\x18\x02 \x01(\tR\x05Nonce\x12\x16\n" +
 	"\x06Method\x18\x03 \x01(\tR\x06Method\x12\x16\n" +
-	"\x06result\x18\x04 \x01(\fR\x06result*V\n" +
+	"\x06result\x18\x04 \x01(\fR\x06result*d\n" +
 	"\bMessType\x12\n" +
 	"\n" +
 	"\x06UNKNOW\x10\x00\x12\t\n" +
@@ -338,7 +341,8 @@ const file_connect_message_message_proto_rawDesc = "" +
 	"\tCLIPBROAD\x10\x02\x12\b\n" +
 	"\x04AUTH\x10\x03\x12\r\n" +
 	"\tKEEPALIVE\x10\x04\x12\v\n" +
-	"\aRELEASE\x10\x05B\bZ\x06./datab\x06proto3"
+	"\aRELEASE\x10\x05\x12\f\n" +
+	"\bREGISTER\x10\x06B\bZ\x06./datab\x06proto3"
 
 var (
 	file_connect_message_message_proto_rawDescOnce sync.Once

@@ -9,6 +9,7 @@ enum MessType {
     AUTH = 3 ;
     KEEPALIVE = 4 ;
     RELEASE = 5 ;  // giai phong cac event
+    REGISTER = 6 ;
 }
 
 message Message {

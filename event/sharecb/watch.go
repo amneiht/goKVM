@@ -3,6 +3,7 @@ package sharecb
 import (
 	"context"
 	"fmt"
+	"log"
 	"sync"
 
 	"golang.design/x/clipboard"
@@ -38,16 +39,16 @@ func equal(a, b []byte) bool {
 
 	return true
 }
-func trimStr(input []byte) []byte {
+func TrimStr(input []byte) []byte {
 	// ret := strings.TrimFunc(string(input), func(r rune) bool {
 	// 	return !unicode.IsLetter(r) && !unicode.IsNumber(r)
 	// })
 	start := 0
-	end := len(input)
+	end := len(input) - 1
 	for input[start] <= ' ' && start < end {
 		start++
 	}
-	end = end - 1
+
 	for input[end] <= ' ' && end > start {
 		end--
 	}
@@ -58,7 +59,11 @@ func (t *Watcher) SetClipBoard(input []byte) {
 
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	buf := trimStr(input)
+	buf := TrimStr(input)
+	if len(buf) == 0 {
+		log.Default().Println("Reject empty string")
+		return
+	}
 	t.old = make([]byte, len(buf))
 	copy(t.old, buf)
 
@@ -75,6 +80,9 @@ func (t *Watcher) Check() {
 
 	ch := clipboard.Watch(t.ctx, clipboard.FmtText)
 	for data := range ch {
+		if len(data) < 2 {
+			continue
+		}
 		t.mu.Lock()
 		if t.OnChange != nil && !equal(data, t.old) {
 			// save old clipbroad
@@ -83,7 +91,7 @@ func (t *Watcher) Check() {
 				copy(t.old, data)
 				t.OnChange(data)
 			} else {
-				fmt.Printf("Cannot send data over %d\n", MAXLENGTH)
+				log.Default().Printf("Cannot send data over %d\n", MAXLENGTH)
 			}
 		}
 		t.mu.Unlock()

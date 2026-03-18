@@ -2,7 +2,7 @@ package app
 
 import (
 	"crypto/tls"
-	"fmt"
+	"log"
 	"net"
 	"sync"
 	"time"
@@ -35,6 +35,7 @@ func runSession(conn net.Conn) {
 	go keepAlive(conn, &wg)
 	event.Init()
 
+	logger := log.Default()
 	var handle = event.NewHandle()
 	defer handle.Close()
 
@@ -50,14 +51,14 @@ func runSession(conn net.Conn) {
 		}
 		buff, _ := proto.Marshal(mess)
 		conn.Write(buff)
-		fmt.Println("Send data to server")
+		logger.Printf("Send %byte to server", len(newClip))
 	}
 
 	// run check session
 	go watch.Check()
 
 	handle.OnGapChange = func(gap bool) {
-		fmt.Printf("Capture mode = %t\n", gap)
+		logger.Printf("Capture mode = %t\n", gap)
 		if !gap {
 			// sen release event
 			var mess = &data.Message{
@@ -80,6 +81,7 @@ func runSession(conn net.Conn) {
 			Payload: buf,
 		}
 		sendbuff, _ := proto.Marshal(mess)
+		conn.SetReadDeadline(time.Now().Add(5 * time.Second))
 		_, err := conn.Write(sendbuff)
 		if err != nil {
 			handle.Stop()
@@ -97,7 +99,7 @@ func runSession(conn net.Conn) {
 
 			switch mess.Type {
 			case data.MessType_CLIPBROAD:
-				fmt.Printf("Buffer from server %d\n", len(mess.Payload))
+				logger.Printf("Buffer from server %d\n", len(mess.Payload))
 				watch.SetClipBoard(mess.Payload)
 			}
 		}
@@ -112,7 +114,7 @@ func ClientConnect(s *string) {
 	var connect_str = *s + ":1597"
 
 	conn, err := tls.Dial("tcp", connect_str, conf)
-	fmt.Printf(" Connect to : %s\n", connect_str)
+	log.Default().Printf(" Connect to : %s\n", connect_str)
 	if err != nil {
 		panic(err)
 	}

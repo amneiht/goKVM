@@ -94,7 +94,6 @@ func (t *Handle) Start(triger func(uint16, uint16, int32)) {
 
 	t.wg.Add(2)
 	t.OnTrigerEvent = triger
-	fmt.Println("First Run")
 	go captureDevice(t, t.mouse)
 	go captureDevice(t, t.key)
 

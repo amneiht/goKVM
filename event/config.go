@@ -1,7 +1,7 @@
 package event
 
 import (
-	"fmt"
+	"log"
 	"strings"
 
 	evdev "github.com/gvalkov/golang-evdev"
@@ -39,6 +39,6 @@ func Init() {
 			break
 		}
 	}
-	fmt.Printf("Mouse in put is %s \n", mouseInput)
-	fmt.Printf("KeyBroad put is %s \n", keyBroadInput)
+	log.Default().Printf("Mouse in put is %s \n", mouseInput)
+	log.Default().Printf("KeyBroad put is %s \n", keyBroadInput)
 }

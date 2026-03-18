@@ -1,7 +1,7 @@
 package emulator
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/amneiht/goKVM/connect/message/data"
 	"github.com/bendahl/uinput"
@@ -48,7 +48,7 @@ func (t *Device) ClearKey() {
 
 		}
 	}
-	fmt.Println("Clear all key")
+	log.Default().Println("Clear all key")
 	clear(t.input)
 }
 func (t *Device) Close() {

@@ -8,8 +8,8 @@ import (
 
 func main() {
 
-	input := []byte("   fucking wow shit      ")
-	input2 := []byte("   fucking wow shit     ss")
+	input := []byte("   fucking wow shit   d   ")
+	input2 := []byte(" ")
 	fmt.Println(string(sharecb.TrimStr(input)))
 	fmt.Println(string(sharecb.TrimStr(input2)))
 }

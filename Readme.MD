@@ -34,5 +34,6 @@ package : libx11-dev , xvfb
 
 # Know bug and TODO
 
+- compress mouse move evnet
 - Smooth switching between multiple devices
 - Only work in linux

@@ -54,7 +54,7 @@ func runSession(conn net.Conn) {
 		}
 		buff, _ := proto.Marshal(mess)
 		conn.Write(buff)
-		logger.Printf("Send %byte to server", len(newClip))
+		logger.Printf("Send %d byte to server", len(newClip))
 	}
 
 	// run check session
@@ -99,7 +99,7 @@ func runSession(conn net.Conn) {
 		if err == nil {
 			var mess data.Message
 			proto.Unmarshal(buf[:n], &mess)
-
+			logger.Println("get data from server")
 			switch mess.Type {
 			case data.MessType_CLIPBROAD:
 				logger.Printf("Buffer from server %d\n", len(mess.Payload))
@@ -192,7 +192,6 @@ func ClientConnect(ctx *AppCtx, s *string) {
 	if !authentic(ctx, conn) {
 		return
 	}
-
 	runSession(conn)
 
 }

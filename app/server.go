@@ -132,9 +132,11 @@ func handle(conn net.Conn, dev *emulator.Device, ctx *AppCtx) {
 	}
 	logger := log.Default()
 	var watch *sharecb.Watcher = nil
+
 	if ctx.IsClipBroadSupport {
 		watch = sharecb.CreateWatcher()
 		defer watch.Close()
+
 		watch.OnChange = func(newClip []byte) {
 			var mess = &data.Message{
 				Type:    data.MessType_CLIPBROAD,
@@ -142,11 +144,12 @@ func handle(conn net.Conn, dev *emulator.Device, ctx *AppCtx) {
 				Payload: newClip,
 			}
 			buff, _ := proto.Marshal(mess)
-			conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+			conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
 			conn.Write(buff)
-			logger.Printf("Send %d to client\n", len(newClip))
+			logger.Printf("Send %d byte to client\n", len(newClip))
 		}
 		go watch.Check()
+		logger.Println("Sever subport clipbroad sharing")
 	}
 	// run check session
 

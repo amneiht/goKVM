@@ -2,7 +2,6 @@ package sharecb
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"sync"
 
@@ -61,7 +60,7 @@ func (t *Watcher) SetClipBoard(input []byte) {
 func Init() bool {
 	err := clipboard.Init()
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Default().Println(err.Error())
 	}
 	return err == nil
 }

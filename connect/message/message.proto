@@ -8,8 +8,9 @@ enum MessType {
     CLIPBROAD = 2 ; 
     AUTH = 3 ;
     KEEPALIVE = 4 ;
-    RELEASE = 5 ;  // giai phong cac event
-    REGISTER = 6 ;
+    REGISTER = 5 ;
+    ENTER = 6 ;  // start to control remote
+    RELEASE = 7 ; // stop
 }
 
 message Message {

@@ -5,13 +5,28 @@ This is simple kvm softwere write in go
 
 # Prepare
 create config to use 
+</br> Onserver
 ```
-./main -print  > config.conf
+./main -print-server  > config.conf
 chmod 600 config.conf
+```
+</br> On client 
+```
+./main -print-client  > config.conf
 ```
 change the default psk to you psk
 ```
 psk = P@ssWoRdVeryLong
+```
+Currently, it only supports automatic switching by hovering the mouse over the left and right sides. And it only supports one main screen.
+
+Auto swich is setting by key "switch" on global session . You should set this value differently on the client and server 
+```
+[global]
+switch = left    # client
+------------------
+[global]
+switch = right  # sever
 ```
 # Using
 On remote 
@@ -30,10 +45,10 @@ sudo ./main -s -f <config file>  > /dev/null 2>&1  &
 
 # Require
 uintput module
-package : libx11-dev , xvfb 
+package : libx11-dev xvfb libx11-dev libxtst-dev
+libxt-dev libxinerama-dev libx11-xcb-dev libxkbcommon-dev libxkbcommon-x11-dev libxkbfile-dev
 
 # Know bug and TODO
-
+- only suppot 2 device
 - compress mouse move evnet
-- Smooth switching between multiple devices
 - Only work in linux

@@ -5,7 +5,7 @@ import (
 
 	"github.com/amneiht/goKVM/connect/message/data"
 	"github.com/bendahl/uinput"
-	evdev "github.com/gvalkov/golang-evdev"
+	evdev "github.com/holoplot/go-evdev"
 )
 
 type Device struct {
@@ -45,7 +45,8 @@ func (t *Device) ClearKey() {
 			t.mouse.RightRelease()
 		case evdev.BTN_MIDDLE:
 			t.mouse.MiddleRelease()
-
+		default:
+			t.keyb.KeyPress(int(key))
 		}
 	}
 	log.Default().Println("Clear all key")

@@ -41,6 +41,7 @@ func main() {
 	var supportc = flag.Bool("print-client", false, "print client sample config")
 	var supports = flag.Bool("print-server", false, "print server sample config")
 	var cfile = flag.String("f", "", "Config file ")
+	var x11 = flag.Bool("x11", true, "change x11 reqiure for first time login")
 	flag.Parse()
 
 	if *supportc {
@@ -58,7 +59,7 @@ func main() {
 		panic("We need config file")
 	}
 	if *iServer {
-		server.StartServer(*cfile)
+		server.StartServer(*cfile, *x11)
 	} else {
 		fmt.Println("start client")
 		client.StartClient(*cfile)

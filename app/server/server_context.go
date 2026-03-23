@@ -30,13 +30,14 @@ type serverContext struct {
 	state      remoteState
 	// mointor size
 	sizeScreen int
+	x11        bool
 	// runing control
 	run    bool
 	listen *connect.KVMListener
 	sock   *connect.KVMSocket
 }
 
-func newServerContext(str string) *serverContext {
+func newServerContext(str string, x11 bool) *serverContext {
 	cfg, err := ini.Load(str)
 	if err != nil {
 		panic(err)
@@ -66,11 +67,15 @@ func newServerContext(str string) *serverContext {
 	svctx.listen = connect.NewListener(inf, port, psk)
 	svctx.clip = clipboard.NewClipBroadService()
 	svctx.emu = emulator.CreateVirtualDevice()
-	sw := gb.Key("switch").String()
-	if len(sw) > 0 {
-		svctx.autoSwitch = true
-		if strings.Compare(sw, "left") == 0 {
-			svctx.letfSwitch = true
+
+	svctx.x11 = x11
+	if x11 {
+		sw := gb.Key("switch").String()
+		if len(sw) > 0 {
+			svctx.autoSwitch = true
+			if strings.Compare(sw, "left") == 0 {
+				svctx.letfSwitch = true
+			}
 		}
 	}
 	return svctx
@@ -91,8 +96,9 @@ func (t *serverContext) Read(data []byte) (int, error) {
 		return 0, errors.New("No Available Sock")
 	}
 }
-func StartServer(s string) {
-	ctx := newServerContext(s)
+func StartServer(s string, x11 bool) {
+	ctx := newServerContext(s, x11)
+
 	ctx.clip.OnChange = ctx.handleClipBroad
 
 	go ctx.clip.StartService()

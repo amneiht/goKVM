@@ -46,7 +46,9 @@ func (t *serverContext) startSession(sock *connect.KVMSocket) {
 	t.sock = sock
 	t.state = STATE_FREE
 	buf := make([]byte, clipboard.MAXLENGTH+1024)
-	t.sizeScreen, _ = robotgo.GetScreenSize()
+	if t.x11 {
+		t.sizeScreen, _ = robotgo.GetScreenSize()
+	}
 	logger := log.Default()
 	logger.Println("Screen size is", t.sizeScreen)
 	for {

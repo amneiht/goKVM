@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"sync"
-	"time"
 
 	"github.com/amneiht/goKVM/util"
 	"golang.design/x/clipboard"
@@ -74,24 +73,22 @@ func (t *CBService) SetClipBoard(input []byte) {
 
 	clipboard.Write(clipboard.FmtText, buf)
 }
+func (t *CBService) Init() bool {
+
+	err := clipboard.Init()
+	t.init = err == nil
+	if err != nil {
+		log.Default().Println("Cannot init clipbroad ", err)
+	}
+	return t.init
+}
 func (t *CBService) StartService() {
 
 	t.wg.Add(1)
 	defer t.wg.Done()
 	loger := log.Default()
 	// loop for init service
-	var err error
-	for t.run {
-		err = cb.Init()
-		if err != nil {
-			time.Sleep(5 * time.Second)
-			loger.Println("Cannot init clipbroad now")
-			continue
-		} else {
-			t.init = true
-			break
-		}
-	}
+
 	ch := cb.Watch(t.ctx, clipboard.FmtText)
 	for data := range ch {
 		if len(data) < 2 {

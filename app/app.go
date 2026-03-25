@@ -9,3 +9,9 @@ const (
 	AUTH
 	DISCONNECT
 )
+
+const (
+	DISTANCE = 30
+)
+
+// View size

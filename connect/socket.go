@@ -125,6 +125,7 @@ func (t *KVMSocket) keepAlive() {
 		conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
 		_, err := conn.Write(buff)
 		if err != nil {
+			t.state = DISCONNECT
 			break
 		}
 		time.Sleep(2 * time.Second)
@@ -154,7 +155,9 @@ func (t *KVMSocket) Read(data []byte) (int, error) {
 		return 0, errors.New("Sock not avaiable")
 	}
 }
-
+func (t *KVMSocket) Status() ConnectState {
+	return t.state
+}
 func (t *KVMSocket) Connect() bool {
 	conf := &tls.Config{
 		InsecureSkipVerify: true,

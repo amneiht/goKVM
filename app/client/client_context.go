@@ -1,15 +1,14 @@
 package client
 
 import (
-	"errors"
 	"log"
 	"strings"
 	"time"
 
 	"github.com/amneiht/goKVM/connect"
+	"github.com/amneiht/goKVM/device"
 	"github.com/amneiht/goKVM/device/clipboard"
 	"github.com/amneiht/goKVM/device/event"
-	"github.com/go-vgo/robotgo"
 	"github.com/holoplot/go-evdev"
 	"gopkg.in/ini.v1"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -18,8 +17,9 @@ import (
 type clientContext struct {
 	log *lumberjack.Logger
 
-	cp  *clipboard.CBService
-	cap *event.Capture
+	cp             *clipboard.CBService
+	shareClipboard bool
+	cap            *event.Capture
 	// auto switch
 	autoSwitch bool
 	socks      [10]*connect.KVMSocket
@@ -28,9 +28,10 @@ type clientContext struct {
 	acitveId   int
 	letfSwitch bool
 	// mointor size
-	sizeScreen int
+	sizeS device.Vsize
 	// runing control
-	run bool
+	run  bool
+	robo device.Robo
 }
 
 func NewClient(config string) *clientContext {
@@ -46,6 +47,7 @@ func NewClient(config string) *clientContext {
 	client.cap.SetKey(gkey)
 	gb := cfg.Section("global")
 	logfile := gb.Key("log").String()
+	client.robo = device.CreateWarrper()
 	if len(logfile) > 0 {
 		client.log = &lumberjack.Logger{
 			Filename:   logfile,
@@ -56,7 +58,7 @@ func NewClient(config string) *clientContext {
 		log.SetOutput(client.log)
 	}
 	// TODO : the only opotion avaiable is home screen size
-	client.sizeScreen, _ = robotgo.GetScreenSize()
+	client.sizeS.X, client.sizeS.Y = client.robo.GetScreenSize()
 	sw := gb.Key("switch").String()
 	if len(sw) > 0 {
 		client.autoSwitch = true
@@ -89,23 +91,15 @@ func NewClient(config string) *clientContext {
 		conn := connect.CreateSocket(psk, host, port)
 		client.socks[id] = conn
 	}
+	client.shareClipboard, _ = gb.Key("clipboard").Bool()
 	return client
 }
 
 func (t *clientContext) Write(data []byte) (int, error) {
-	if t.activeSock != nil {
-		return t.activeSock.Write(data)
-	} else {
-		return 0, errors.New("No Available Sock")
-	}
+	return t.activeSock.Write(data)
 }
 func (t *clientContext) Read(data []byte) (int, error) {
-
-	if t.activeSock != nil {
-		return t.activeSock.Read(data)
-	} else {
-		return 0, errors.New("No Available Sock")
-	}
+	return t.activeSock.Read(data)
 }
 
 func (t *clientContext) Close() {
@@ -132,22 +126,28 @@ func StartClient(config string) {
 	ctx.cap.OnGrapChange = ctx.handleGrap
 	// setting capppture control
 	ctx.cap.OnEventChange = ctx.handleEvent
-	// clipbroad send
-	ctx.cp.OnChange = ctx.handleClipBroad
 
-	// start service
-	go ctx.cap.Start()
-	go ctx.cp.StartService()
+	ctx.cp.Init()
+	if ctx.shareClipboard {
+		// clipbroad send
+		ctx.cp.OnChange = ctx.handleClipBroad
+		go ctx.cp.StartService()
+	}
 
-	log.Default().Println("Start client")
+	logger.Println("Start client")
 	for {
 		sock := ctx.activeSock
 		if !sock.Connect() {
 			time.Sleep(5 * time.Second)
 		}
+		// start service
+		logger.Println("Connect to server")
+		go ctx.cap.Start()
 		ctx.run = true
 
 		ctx.handleMessage()
+		logger.Println("Disconnect server")
+		ctx.cap.Stop()
 		// clear socket
 		ctx.activeSock.Disconnect()
 		// change socket

@@ -31,7 +31,7 @@ const (
 	MessType_KEEPALIVE MessType = 4
 	MessType_REGISTER  MessType = 5
 	MessType_ENTER     MessType = 6 // start to control remote
-	MessType_RELEASE   MessType = 7 // stop control remote
+	MessType_RELEASE   MessType = 7 // stop
 )
 
 // Enum value maps for MessType.
@@ -317,6 +317,58 @@ func (x *Auth) GetResult() []byte {
 	return nil
 }
 
+type Point struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	X             int32                  `protobuf:"varint,1,opt,name=x,proto3" json:"x,omitempty"`
+	Y             int32                  `protobuf:"varint,2,opt,name=y,proto3" json:"y,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Point) Reset() {
+	*x = Point{}
+	mi := &file_connect_message_message_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Point) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Point) ProtoMessage() {}
+
+func (x *Point) ProtoReflect() protoreflect.Message {
+	mi := &file_connect_message_message_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Point.ProtoReflect.Descriptor instead.
+func (*Point) Descriptor() ([]byte, []int) {
+	return file_connect_message_message_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *Point) GetX() int32 {
+	if x != nil {
+		return x.X
+	}
+	return 0
+}
+
+func (x *Point) GetY() int32 {
+	if x != nil {
+		return x.Y
+	}
+	return 0
+}
+
 var File_connect_message_message_proto protoreflect.FileDescriptor
 
 const file_connect_message_message_proto_rawDesc = "" +
@@ -336,7 +388,10 @@ const file_connect_message_message_proto_rawDesc = "" +
 	"\x04User\x18\x01 \x01(\tR\x04User\x12\x14\n" +
 	"\x05Nonce\x18\x02 \x01(\tR\x05Nonce\x12\x16\n" +
 	"\x06Method\x18\x03 \x01(\tR\x06Method\x12\x16\n" +
-	"\x06result\x18\x04 \x01(\fR\x06result*o\n" +
+	"\x06result\x18\x04 \x01(\fR\x06result\"#\n" +
+	"\x05Point\x12\f\n" +
+	"\x01x\x18\x01 \x01(\x05R\x01x\x12\f\n" +
+	"\x01y\x18\x02 \x01(\x05R\x01y*o\n" +
 	"\bMessType\x12\n" +
 	"\n" +
 	"\x06UNKNOW\x10\x00\x12\t\n" +
@@ -361,13 +416,14 @@ func file_connect_message_message_proto_rawDescGZIP() []byte {
 }
 
 var file_connect_message_message_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_connect_message_message_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_connect_message_message_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_connect_message_message_proto_goTypes = []any{
 	(MessType)(0),     // 0: message.MessType
 	(*Message)(nil),   // 1: message.Message
 	(*Event)(nil),     // 2: message.Event
 	(*ClipBroad)(nil), // 3: message.ClipBroad
 	(*Auth)(nil),      // 4: message.Auth
+	(*Point)(nil),     // 5: message.Point
 }
 var file_connect_message_message_proto_depIdxs = []int32{
 	0, // 0: message.Message.Type:type_name -> message.MessType
@@ -389,7 +445,7 @@ func file_connect_message_message_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_connect_message_message_proto_rawDesc), len(file_connect_message_message_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

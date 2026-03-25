@@ -25,12 +25,18 @@ type Capture struct {
 	// device
 	kinput uinput.Keyboard
 	minput uinput.Mouse
+
+	signal chan struct{}
 }
 
 func (t *Capture) Close() {
 
-	t.run = false
-	t.wg.Wait()
+	if t.run {
+		t.run = false
+		<-t.signal
+	}
+
+	close(t.signal)
 
 	t.kinput.Close()
 	t.minput.Close()
@@ -71,6 +77,7 @@ func NewCapture() *Capture {
 	cap.kinput = key
 	cap.minput = mouse
 	cap.run = true
+	cap.signal = make(chan struct{})
 	cap.keyMap = make(map[evdev.EvCode]bool)
 	cap.grabMap = make(map[evdev.EvCode]bool)
 	return cap
@@ -145,11 +152,9 @@ func captureMouse(t *Capture, dev string) {
 	}
 }
 func captureKeyBroad(t *Capture, dev string) {
-
 	defer t.wg.Done()
 	edev, _ := evdev.Open(dev)
 	defer edev.Close()
-
 	// edev.NonBlock()
 	grab := false
 	for t.Runing() {
@@ -171,20 +176,19 @@ func captureKeyBroad(t *Capture, dev string) {
 				delete(t.keyMap, ie.Code)
 			}
 		}
-
 		if t.grab != grab {
 			grab = t.grab
 			if grab {
 				log.Default().Println("Grab keybroad")
-				t.ClearInput()
 				edev.Grab()
-
+				t.ClearInput()
 			} else {
+				edev.Ungrab()
 				if ie.Value > 0 {
 					// restore input
-					t.kinput.KeyDown(int(ie.Code))
+					t.kinput.KeyPress(int(ie.Code))
 				}
-				edev.Ungrab()
+
 			}
 		}
 	}
@@ -192,7 +196,8 @@ func captureKeyBroad(t *Capture, dev string) {
 
 func (t *Capture) Start() {
 	logger := log.Default()
-
+	t.grab = false
+	t.run = true
 	for t.run {
 		dkey, dmouse := findDevice()
 		if len(dmouse) == 0 && len(dkey) == 0 {
@@ -205,5 +210,13 @@ func (t *Capture) Start() {
 		go captureMouse(t, dmouse)
 		captureKeyBroad(t, dkey)
 		t.wg.Wait()
+	}
+	t.signal <- struct{}{}
+}
+
+func (t *Capture) Stop() {
+	if t.run {
+		t.run = false
+		<-t.signal
 	}
 }

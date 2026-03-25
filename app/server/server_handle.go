@@ -2,7 +2,9 @@ package server
 
 import (
 	"log"
+	"runtime"
 
+	"github.com/amneiht/goKVM/app"
 	"github.com/amneiht/goKVM/connect"
 	"github.com/amneiht/goKVM/connect/message/data"
 	"github.com/amneiht/goKVM/device/clipboard"
@@ -24,30 +26,41 @@ func (t *serverContext) handleClipBroad(newClip []byte) {
 		log.Default().Printf("Send %d byte to client", len(newClip))
 	}
 }
+func sendRelease(t *serverContext, x int, y int) {
+	mess := &data.Message{
+		Type:    data.MessType_RELEASE,
+		Request: true,
+	}
+	point := &data.Point{
+		X: int32(x),
+		Y: int32(y),
+	}
+	sbuf, _ := proto.Marshal(point)
+	mess.Payload = sbuf
+	buf, _ := proto.Marshal(mess)
+	t.Write(buf)
+}
 func (t *serverContext) control(mess *data.Event) {
 	if mess.Type == evdev.EV_REL && mess.Code == evdev.REL_X {
 		x, y := robotgo.Location()
-
-		mess := &data.Message{
-			Type:    data.MessType_RELEASE,
-			Request: true,
-		}
-		buf, _ := proto.Marshal(mess)
 		if t.letfSwitch && x == 0 {
-			robotgo.Move(1, y)
-			t.Write(buf)
-		} else if !t.letfSwitch && x == t.sizeScreen-1 {
-			robotgo.Move(x-1, y)
-			t.Write(buf)
+
+			robotgo.Move(app.DISTANCE, y)
+			sendRelease(t, x, y)
+		} else if !t.letfSwitch && x == t.sizeScreen.X-1 {
+			robotgo.Move(x-app.DISTANCE, y)
+			sendRelease(t, x, y)
 		}
 	}
 }
 func (t *serverContext) startSession(sock *connect.KVMSocket) {
+	// khoa lai goroutin
+	runtime.LockOSThread()
 	t.sock = sock
 	t.state = STATE_FREE
 	buf := make([]byte, clipboard.MAXLENGTH+1024)
 	if t.x11 {
-		t.sizeScreen, _ = robotgo.GetScreenSize()
+		t.sizeScreen.X, t.sizeScreen.Y = robotgo.GetScreenSize()
 	}
 	logger := log.Default()
 	logger.Println("Screen size is", t.sizeScreen)
@@ -65,8 +78,24 @@ func (t *serverContext) startSession(sock *connect.KVMSocket) {
 			err = proto.Unmarshal(mess.Payload, &mevent)
 			// fmt.Printf("Get event %d %d \n", mevent.Code, mevent.Type)
 			t.emu.Handle(&mevent)
-			if t.autoSwitch {
+			if t.autoSwitch && t.x11 {
 				t.control(&mevent)
+			}
+		case data.MessType_ENTER:
+			if t.x11 && t.autoSwitch {
+				var point data.Point
+				proto.Unmarshal(mess.Payload, &point)
+				// todo : check  for diffrent display resolution
+				var y int = int(point.Y)
+				if point.Y > int32(t.sizeScreen.Y) {
+					y = t.sizeScreen.X
+				}
+				if t.letfSwitch {
+					robotgo.Move(app.DISTANCE, y)
+				} else {
+					robotgo.Move(t.sizeScreen.X-app.DISTANCE, y)
+				}
+
 			}
 		case data.MessType_RELEASE:
 			t.emu.ClearKey()

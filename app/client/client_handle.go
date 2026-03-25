@@ -3,9 +3,10 @@ package client
 import (
 	"log"
 
+	"github.com/amneiht/goKVM/app"
+	"github.com/amneiht/goKVM/connect"
 	"github.com/amneiht/goKVM/connect/message/data"
 	"github.com/amneiht/goKVM/device/clipboard"
-	"github.com/go-vgo/robotgo"
 	"github.com/holoplot/go-evdev"
 	"google.golang.org/protobuf/proto"
 )
@@ -28,12 +29,12 @@ func (t *clientContext) handleEvent(evtype uint16, evcode uint16, value int32) {
 	} else if t.autoSwitch && evtype == evdev.EV_REL {
 		// handle mouse vent if not in grab mod
 		if evcode == evdev.REL_X {
-			x, y := robotgo.Location()
+			x, y := t.robo.Location()
 			if t.letfSwitch && x == 0 {
-				robotgo.Move(1, y)
+				t.robo.Move(app.DISTANCE, y)
 				t.cap.GrabChange(true)
-			} else if !t.letfSwitch && x == t.sizeScreen-1 {
-				robotgo.Move(x-1, y)
+			} else if !t.letfSwitch && x == t.sizeS.X-1 {
+				t.robo.Move(x-app.DISTANCE, y)
 				t.cap.GrabChange(true)
 
 			}
@@ -49,6 +50,13 @@ func (t *clientContext) handleGrap(grab bool) {
 		Type:    data.MessType_RELEASE}
 	if grab {
 		mess.Type = data.MessType_ENTER
+		// using x11
+		x, y := t.robo.Location()
+		point := &data.Point{
+			X: int32(x),
+			Y: int32(y),
+		}
+		mess.Payload, _ = proto.Marshal(point)
 	}
 	sendbuff, _ := proto.Marshal(mess)
 	t.Write(sendbuff)
@@ -72,7 +80,7 @@ func (t *clientContext) handleMessage() {
 	buf := make([]byte, clipboard.MAXLENGTH+1024)
 	logger := log.Default()
 	var mess data.Message
-	for t.run {
+	for t.run && t.activeSock.Status() == connect.AUTH {
 		n, err := t.Read(buf)
 		if err == nil {
 			proto.Unmarshal(buf[:n], &mess)
@@ -83,6 +91,19 @@ func (t *clientContext) handleMessage() {
 				t.cp.SetClipBoard(mess.Payload)
 			case data.MessType_RELEASE:
 				t.cap.GrabChange(false)
+				if t.autoSwitch {
+					var point = new(data.Point)
+					proto.Unmarshal(mess.Payload, point)
+					var y int = int(point.Y)
+					if y > t.sizeS.Y {
+						y = t.sizeS.Y
+					}
+					if t.letfSwitch {
+						t.robo.Move(app.DISTANCE, y)
+					} else {
+						t.robo.Move(t.sizeS.X-app.DISTANCE, y)
+					}
+				}
 			}
 		}
 	}

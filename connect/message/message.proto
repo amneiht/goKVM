@@ -35,3 +35,8 @@ message Auth {
     string Method = 3;
     bytes result = 4 ;
 }
+
+message Point {
+    int32 X = 1 ;
+    int32 Y = 2 ;
+}

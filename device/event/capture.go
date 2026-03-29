@@ -196,7 +196,8 @@ func captureKeyBroad(t *Capture, dev string) {
 				log.Default().Println("Grab keybroad")
 				t.ClearInput()
 			}
-		} else if !grab {
+		}
+		if !grab {
 			if ie.Value > 0 {
 				t.keyMap[ie.Code] = true
 				// log.Default().Println("press key:", evdev.KEYNames[ie.Code])

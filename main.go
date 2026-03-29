@@ -4,38 +4,39 @@ import (
 	"flag"
 	"fmt"
 
+	"github.com/amneiht/goKVM/app"
 	"github.com/amneiht/goKVM/app/client"
 	"github.com/amneiht/goKVM/app/server"
 )
 
 func printClientConfig() {
-	fmt.Println("# Config example")
-	fmt.Println("[global]")
-	fmt.Println("log = /var/log/goKVM.log")
-	fmt.Println("# switch = left | right")
-	fmt.Println("switch = left     # move mose to left to switch change")
-	fmt.Println("clipboard = no    # share clibroad  default no")
-	fmt.Println("\n[laptop]")
-	fmt.Println("id = 1            # using for switch view")
-	fmt.Println("port = 1357")
-	fmt.Println("psk = Amneiht@12345")
-	fmt.Println("host = 192.168.1.1")
-	fmt.Println("\n[pc1]")
-	fmt.Println("id = 2  # using for switch view")
-	fmt.Println("port = 1357")
-	fmt.Println("psk = Amneiht@12345")
-	fmt.Println("host = 192.168.1.2")
+	fmt.Printf("# Config example\n")
+	fmt.Printf("[global]\n")
+	fmt.Printf("%s = /var/log/goKVM.log\n", app.LOG)
+	fmt.Printf("#%s = left | right\n", app.SWITCH)
+	fmt.Printf("%s = left     # move mose to left to switch change\n", app.SWITCH)
+	fmt.Printf("%s = no    # share clibroad  default no\n", app.CLIPBROAD)
+	fmt.Printf("\n[laptop]\n")
+	fmt.Printf("%s = 1            # using for switch view\n", app.ID)
+	fmt.Printf("%s = 1357\n", app.PORT)
+	fmt.Printf("%s = Amneiht@12345\n", app.PSK)
+	fmt.Printf("%s = 192.168.1.1\n", app.HOST)
+	fmt.Printf("\n[laptop]\n")
+	fmt.Printf("%s = 1            # using for switch view\n", app.ID)
+	fmt.Printf("%s = 1357\n", app.PORT)
+	fmt.Printf("%s = Amneiht@12345\n", app.PSK)
+	fmt.Printf("%s = 192.168.1.w\n", app.HOST)
 
 }
 func printServerConfig() {
-	fmt.Println("# Config example")
-	fmt.Println("[global]")
-	fmt.Println("log = /var/log/goKVM.log")
-	fmt.Println("switch = right    # move mose to top right to switch change")
-	fmt.Println("port = 1357")
-	fmt.Println("psk = Amneiht@12345")
-	fmt.Println("clipboard = no    # share clibroad  default no")
-	fmt.Println("listen = 0.0.0.0  # listen on all interface")
+	fmt.Printf("# Config example\n")
+	fmt.Printf("[global]\n")
+	fmt.Printf("%s = /var/log/goKVM.log\n", app.LOG)
+	fmt.Printf("%s = right    # move mose to top right to switch change\n", app.SWITCH)
+	fmt.Printf("%s = 1357\n", app.PORT)
+	fmt.Printf("%s = Amneiht@12345\n", app.PSK)
+	fmt.Printf("%s = no    # share clibroad  default no\n", app.CLIPBROAD)
+	fmt.Printf("%s = 0.0.0.0  # listen on all interface\n", app.LISTEN)
 }
 func main() {
 
@@ -57,14 +58,14 @@ func main() {
 	}
 
 	if len(*cfile) == 0 {
-		// fmt.Println("We need config file")
+		// fmt.Printf("We need config file")
 		panic("We need config file")
 	}
 
 	if *iServer {
 		server.StartServer(*cfile)
 	} else {
-		fmt.Println("start client")
+		fmt.Println("Start client")
 		client.StartClient(*cfile)
 	}
 

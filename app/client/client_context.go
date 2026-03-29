@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/amneiht/goKVM/app"
 	"github.com/amneiht/goKVM/connect"
 	"github.com/amneiht/goKVM/device"
 	"github.com/amneiht/goKVM/device/clipboard"
@@ -45,8 +46,8 @@ func NewClient(config string) *clientContext {
 	client.run = true
 	gkey := []evdev.EvCode{evdev.KEY_RIGHTSHIFT, evdev.KEY_RIGHTCTRL}
 	client.cap.SetKey(gkey)
-	gb := cfg.Section("global")
-	logfile := gb.Key("log").String()
+	gb := cfg.Section(app.DEFAULTSESSION)
+	logfile := gb.Key(app.LOG).String()
 	client.robo = device.CreateWarrper()
 	if len(logfile) > 0 {
 		client.log = &lumberjack.Logger{
@@ -59,10 +60,10 @@ func NewClient(config string) *clientContext {
 	}
 	// TODO : the only opotion avaiable is home screen size
 	client.sizeS.X, client.sizeS.Y = client.robo.GetScreenSize()
-	sw := gb.Key("switch").String()
+	sw := gb.Key(app.SWITCH).String()
 	if len(sw) > 0 {
 		client.autoSwitch = true
-		if strings.Compare(sw, "left") == 0 {
+		if strings.Compare(sw, app.MODELEFT) == 0 {
 			client.letfSwitch = true
 		}
 	}
@@ -70,19 +71,19 @@ func NewClient(config string) *clientContext {
 
 	logger := log.Default()
 	for _, section := range list {
-		if section.Name() == "global" {
+		if section.Name() == app.DEFAULTSESSION {
 			continue
 		}
-		id, _ := section.Key("id").Int()
+		id, _ := section.Key(app.ID).Int()
 		if id == 0 || id > 9 {
 			if id > 9 {
 				logger.Println("max support for 10 devices")
 			}
 			continue
 		}
-		psk := section.Key("psk").String()
-		port, _ := section.Key("port").Int()
-		host := section.Key("host").String()
+		psk := section.Key(app.PSK).String()
+		port, _ := section.Key(app.PORT).Int()
+		host := section.Key(app.HOST).String()
 
 		if client.socks[id] != nil {
 			logger.Println("id is duplicate on section", section.Name())
@@ -91,7 +92,7 @@ func NewClient(config string) *clientContext {
 		conn := connect.CreateSocket(psk, host, port)
 		client.socks[id] = conn
 	}
-	client.shareClipboard, _ = gb.Key("clipboard").Bool()
+	client.shareClipboard, _ = gb.Key(app.CLIPBROAD).Bool()
 	return client
 }
 
@@ -139,6 +140,7 @@ func StartClient(config string) {
 		sock := ctx.activeSock
 		if !sock.Connect() {
 			time.Sleep(5 * time.Second)
+			continue
 		}
 		// start service
 		logger.Println("Connect to server")

@@ -1,7 +1,6 @@
 package event
 
 import (
-	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -11,7 +10,8 @@ import (
 )
 
 type Capture struct {
-	run  bool
+	run  bool // capture runiing
+	cap  bool // capture loop
 	grab bool
 	// goroutin control
 	wg sync.WaitGroup
@@ -31,6 +31,7 @@ type Capture struct {
 
 func (t *Capture) Close() {
 
+	t.cap = false
 	if t.run {
 		t.run = false
 		<-t.signal
@@ -65,7 +66,7 @@ func (t *Capture) ClearInput() {
 		}
 	}
 	clear(t.keyMap)
-	log.Default().Println()
+
 }
 func NewCapture() *Capture {
 	cap := new(Capture)
@@ -126,12 +127,21 @@ func captureMouse(t *Capture, dev string) {
 	edev, _ := evdev.Open(dev)
 	defer edev.Close()
 
-	edev.NonBlock()
+	defer func() {
+		if r := recover(); r != nil {
+			t.cap = false
+			log.Default().Println("Mouse capture Panic recover")
+		}
+	}()
+
+	// edev.NonBlock()
 	grab := false
-	for t.Runing() {
+	for t.cap {
 		ie, err := edev.ReadOne()
 		if err != nil {
-			fmt.Println(err)
+			// fmt.Println(err)
+			t.cap = false
+			log.Default().Println("Error:", err)
 			break
 		}
 		if ie.Type != evdev.EV_REL && ie.Type != evdev.EV_KEY {
@@ -151,44 +161,50 @@ func captureMouse(t *Capture, dev string) {
 		}
 	}
 }
+
 func captureKeyBroad(t *Capture, dev string) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.cap = false
+			log.Default().Println("Keyboard capture Panic recover")
+		}
+	}()
+
 	defer t.wg.Done()
 	edev, _ := evdev.Open(dev)
 	defer edev.Close()
 	// edev.NonBlock()
 	grab := false
+	// we must grap event first because readone is block until we press , so
+	// first key is duplicate on two machine
+	edev.Grab()
+
 	for t.Runing() {
 		ie, err := edev.ReadOne()
 		if err != nil {
-			fmt.Println(err)
+			log.Default().Println("Error:", err)
+			t.cap = false
 			break
 		}
 		if ie.Type != evdev.EV_KEY {
 			continue
 		}
 		t.handle(ie)
-		if !grab {
-			if ie.Value > 0 {
-				t.keyMap[ie.Code] = true
-				// log.Default().Println("press key:", evdev.KEYNames[ie.Code])
-			} else {
-				// xoa key
-				delete(t.keyMap, ie.Code)
-			}
-		}
 		if t.grab != grab {
 			grab = t.grab
 			if grab {
 				log.Default().Println("Grab keybroad")
-				edev.Grab()
 				t.ClearInput()
+			}
+		} else if !grab {
+			if ie.Value > 0 {
+				t.keyMap[ie.Code] = true
+				// log.Default().Println("press key:", evdev.KEYNames[ie.Code])
+				t.kinput.KeyDown(int(ie.Code))
 			} else {
-				edev.Ungrab()
-				if ie.Value > 0 {
-					// restore input
-					t.kinput.KeyPress(int(ie.Code))
-				}
-
+				// xoa key
+				delete(t.keyMap, ie.Code)
+				t.kinput.KeyUp(int(ie.Code))
 			}
 		}
 	}
@@ -199,6 +215,7 @@ func (t *Capture) Start() {
 	t.grab = false
 	t.run = true
 	for t.run {
+		logger.Println("Find new Devive")
 		dkey, dmouse := findDevice()
 		if len(dmouse) == 0 && len(dkey) == 0 {
 			time.Sleep(3 * time.Second)
@@ -207,8 +224,10 @@ func (t *Capture) Start() {
 		logger.Println("Mouse is", dmouse)
 		logger.Println("Keybroad is", dkey)
 		t.wg.Add(2)
+		t.cap = true
 		go captureMouse(t, dmouse)
-		captureKeyBroad(t, dkey)
+		go captureKeyBroad(t, dkey)
+
 		t.wg.Wait()
 	}
 	t.signal <- struct{}{}

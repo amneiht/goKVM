@@ -5,6 +5,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/amneiht/goKVM/app"
 	"github.com/amneiht/goKVM/connect"
 	"github.com/amneiht/goKVM/device"
 	"github.com/amneiht/goKVM/device/clipboard"
@@ -46,8 +47,9 @@ func newServerContext(str string) *serverContext {
 		panic(err)
 	}
 	svctx := new(serverContext)
-	gb := cfg.Section("global")
-	file := gb.Key("log").String()
+	gb := cfg.Section(app.DEFAULTSESSION)
+
+	file := gb.Key(app.LOG).String()
 	if len(file) > 0 {
 		svctx.log = &lumberjack.Logger{
 			Filename:   file,
@@ -57,9 +59,12 @@ func newServerContext(str string) *serverContext {
 		}
 		log.SetOutput(svctx.log)
 	}
-	inf := gb.Key("listen").String()
-	port, _ := gb.Key("port").Int()
-	psk := gb.Key("psk").String()
+	inf := gb.Key(app.HOST).String()
+	port, _ := gb.Key(app.PORT).Int()
+	psk := gb.Key(app.PSK).String()
+	if len(psk) == 0 {
+		psk = "abc@12345"
+	}
 	if len(inf) == 0 {
 		inf = "0.0.0.0"
 	}
@@ -70,16 +75,16 @@ func newServerContext(str string) *serverContext {
 	svctx.listen = connect.NewListener(inf, port, psk)
 	svctx.clip = clipboard.NewClipBroadService()
 	svctx.emu = emulator.CreateVirtualDevice()
-	svctx.shareClip, err = gb.Key("clipbroad").Bool()
+	svctx.shareClip, err = gb.Key(app.CLIPBROAD).Bool()
 	if err != nil {
 		svctx.shareClip = false
 	}
 
 	svctx.x11 = true
-	sw := gb.Key("switch").String()
+	sw := gb.Key(app.SWITCH).String()
 	if len(sw) > 0 {
 		svctx.autoSwitch = true
-		if strings.Compare(sw, "left") == 0 {
+		if strings.Compare(sw, app.MODELEFT) == 0 {
 			svctx.letfSwitch = true
 		}
 	}
@@ -106,11 +111,13 @@ func (t *serverContext) Read(data []byte) (int, error) {
 func StartServer(s string) {
 	ctx := newServerContext(s)
 	ret := ctx.clip.Init()
+
 	if ret == false {
 		log.Default().Println("X11 system is not avaible")
 		ctx.x11 = false
 	}
 	if ctx.shareClip {
+		log.Default().Println("Enable clipbroad sharing")
 		ctx.clip.OnChange = ctx.handleClipBroad
 		go ctx.clip.StartService()
 	}

@@ -235,6 +235,7 @@ func (t *Capture) Start() {
 }
 
 func (t *Capture) Stop() {
+	t.cap = false
 	if t.run {
 		t.run = false
 		<-t.signal

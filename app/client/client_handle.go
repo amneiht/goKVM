@@ -83,7 +83,7 @@ func (t *clientContext) handleMessage() {
 	for t.run && t.activeSock.Status() == connect.AUTH {
 		n, err := t.Read(buf)
 		if err == nil {
-			proto.Unmarshal(buf[:n], &mess)
+			err = proto.Unmarshal(buf[:n], &mess)
 			logger.Println("get data from server")
 			switch mess.Type {
 			case data.MessType_CLIPBROAD:

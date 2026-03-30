@@ -52,3 +52,4 @@ libxt-dev libxinerama-dev libx11-xcb-dev libxkbcommon-dev libxkbcommon-x11-dev l
 - only suppot 2 device
 - compress mouse move evnet
 - Only work in linux
+- Handle compress package

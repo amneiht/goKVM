@@ -123,16 +123,15 @@ func (t *Capture) GrabChange(b bool) {
 
 }
 func captureMouse(t *Capture, dev string) {
-	defer t.wg.Done()
-	edev, _ := evdev.Open(dev)
-	defer edev.Close()
-
 	defer func() {
 		if r := recover(); r != nil {
 			t.cap = false
 			log.Default().Println("Mouse capture Panic recover")
 		}
 	}()
+	defer t.wg.Done()
+	edev, _ := evdev.Open(dev)
+	defer edev.Close()
 
 	// edev.NonBlock()
 	grab := false

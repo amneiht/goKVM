@@ -1,3 +1,4 @@
+//go:buid linux
 package emulator
 
 import (
@@ -8,7 +9,7 @@ import (
 	evdev "github.com/holoplot/go-evdev"
 )
 
-type Device struct {
+type linuxDevice struct {
 	// add mutext heare
 	mouse uinput.Mouse
 	keyb  uinput.Keyboard
@@ -18,25 +19,25 @@ type Device struct {
 /*
 create virtual device
 */
-func CreateVirtualDevice() *Device {
+func CreateVirtualDevice() Device {
 	mouse, err := uinput.CreateMouse("/dev/uinput", []byte("go-mouse"))
 	if err != nil {
 		panic("Cannot create mouse input")
 	}
 	key, _ := uinput.CreateKeyboard("/dev/uinput", []byte("go-key"))
 
-	var dev Device
+	var dev = new(linuxDevice)
 	dev.mouse = mouse
 	dev.keyb = key
 	maps := make(map[int32]int32)
 	dev.input = maps
-	return &dev
+	return dev
 }
 
 /*
 clear all key event trigger by app
 */
-func (t *Device) ClearKey() {
+func (t *linuxDevice) ClearKey() {
 	for key := range t.input {
 		switch key {
 		case evdev.BTN_LEFT:
@@ -52,11 +53,11 @@ func (t *Device) ClearKey() {
 	log.Default().Println("Clear all key")
 	clear(t.input)
 }
-func (t *Device) Close() {
+func (t *linuxDevice) Close() {
 	t.mouse.Close()
 	t.keyb.Close()
 }
-func (t *Device) Handle(mevt *data.Event) {
+func (t *linuxDevice) Handle(mevt *data.Event) {
 
 	switch mevt.Type {
 	case evdev.EV_REL:

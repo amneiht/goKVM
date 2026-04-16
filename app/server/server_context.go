@@ -3,6 +3,7 @@ package server
 import (
 	"errors"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/amneiht/goKVM/app"
@@ -26,7 +27,7 @@ type serverContext struct {
 
 	clip      *clipboard.CBService
 	shareClip bool
-	emu       *emulator.Device
+	emu       emulator.Device
 	// auto switch
 	autoSwitch bool
 	letfSwitch bool
@@ -41,6 +42,23 @@ type serverContext struct {
 	// robo   device.Robo
 }
 
+// for window
+func readInput(str string) ([]byte, error) {
+
+	data, err := os.ReadFile(str)
+	if err != nil {
+		return nil, err
+	}
+	k := 0
+	for i, v := range data {
+		if v > ' ' && v < '~' {
+			k = i
+			break
+		}
+	}
+	ret := data[k:]
+	return ret, nil
+}
 func newServerContext(str string) *serverContext {
 	cfg, err := ini.Load(str)
 	if err != nil {
@@ -68,6 +86,7 @@ func newServerContext(str string) *serverContext {
 	if len(inf) == 0 {
 		inf = "0.0.0.0"
 	}
+	log.Default().Println("psk = ", psk)
 	if port == 0 {
 		port = 1357
 	}

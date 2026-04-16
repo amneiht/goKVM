@@ -8,8 +8,8 @@ import (
 	"github.com/amneiht/goKVM/connect"
 	"github.com/amneiht/goKVM/connect/message/data"
 	"github.com/amneiht/goKVM/device/clipboard"
+	"github.com/amneiht/goKVM/device/meta"
 	"github.com/go-vgo/robotgo"
-	"github.com/holoplot/go-evdev"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -41,7 +41,7 @@ func sendRelease(t *serverContext, x int, y int) {
 	t.Write(buf)
 }
 func (t *serverContext) control(mess *data.Event) {
-	if mess.Type == evdev.EV_REL && mess.Code == evdev.REL_X {
+	if mess.Type == meta.EV_REL && mess.Code == meta.REL_X {
 		x, y := robotgo.Location()
 		if t.letfSwitch && x == 0 {
 

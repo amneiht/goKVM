@@ -7,7 +7,6 @@ import (
 
 	"github.com/amneiht/goKVM/util"
 	"golang.design/x/clipboard"
-	cb "golang.design/x/clipboard"
 )
 
 const (
@@ -89,7 +88,7 @@ func (t *CBService) StartService() {
 	loger := log.Default()
 	// loop for init service
 
-	ch := cb.Watch(t.ctx, clipboard.FmtText)
+	ch := clipboard.Watch(t.ctx, clipboard.FmtText)
 	for data := range ch {
 		if len(data) < 2 {
 			continue

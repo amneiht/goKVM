@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"runtime"
 
 	"github.com/amneiht/goKVM/app"
 	"github.com/amneiht/goKVM/app/client"
@@ -61,12 +62,16 @@ func main() {
 		// fmt.Printf("We need config file")
 		panic("We need config file")
 	}
-
+	fmt.Println("using  config file ", *cfile)
 	if *iServer {
 		server.StartServer(*cfile)
 	} else {
-		fmt.Println("Start client")
-		client.StartClient(*cfile)
+		if runtime.GOOS == "linux" {
+			fmt.Println("Start client")
+			client.StartClient(*cfile)
+		} else {
+			fmt.Println("Donot suppport on ", runtime.GOOS)
+		}
 	}
 
 }
